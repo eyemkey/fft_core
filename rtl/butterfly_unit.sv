@@ -2,7 +2,7 @@
 
 
 module butterfly_unit #(
-    parameter WIDTH=16
+    parameter int WIDTH=16
 )
 (
     input logic signed [WIDTH-1:0] in_a_re, 
@@ -10,10 +10,10 @@ module butterfly_unit #(
     input logic signed [WIDTH-1:0] in_b_re, 
     input logic signed [WIDTH-1:0] in_b_im, 
     
-    output logic signed [WIDTH-1:0] out_a_re, 
-    output logic signed [WIDTH-1:0] out_a_im, 
-    output logic signed [WIDTH-1:0] out_b_re, 
-    output logic signed [WIDTH-1:0] out_b_im 
+    output logic signed [WIDTH-1:0] out_sum_re, 
+    output logic signed [WIDTH-1:0] out_sum_im, 
+    output logic signed [WIDTH-1:0] out_diff_re, 
+    output logic signed [WIDTH-1:0] out_diff_im 
 );
 
     logic signed [WIDTH:0] sum_re_full, sum_im_full; //Extra bit to account for carry
@@ -26,10 +26,10 @@ module butterfly_unit #(
         diff_re_full = in_a_re - in_b_re; 
         diff_im_full = in_a_im - in_b_im; 
         
-        out_a_re = sum_re_full >>> 1; // Dropping the LSB while keeping signs
-        out_a_im = sum_im_full >>> 1; // To keep memory usage consistent through stages
-        out_b_re = diff_re_full >>> 1; 
-        out_b_im = diff_im_full >>> 1;
+        out_sum_re = sum_re_full >>> 1; // Dropping the LSB while keeping signs
+        out_sum_im = sum_im_full >>> 1; // To keep memory usage consistent through stages
+        out_diff_re = diff_re_full >>> 1; 
+        out_diff_im = diff_im_full >>> 1;
     end
         
 endmodule
