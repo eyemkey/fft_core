@@ -3,6 +3,7 @@
 module stage
 #(
     parameter int DELAY,
+    parameter string MEMFILE,
     parameter int WIDTH = 16 
 )
 (
@@ -29,12 +30,7 @@ module stage
     
     logic signed [WIDTH-1:0] fifo_buffer_re [0:DELAY-1];
     logic signed [WIDTH-1:0] fifo_buffer_im [0:DELAY-1];
-    logic signed [WIDTH-1:0] twiddle_factors_re [0:DELAY-1];
-    logic signed [WIDTH-1:0] twiddle_factors_im [0:DELAY-1]; 
-    
-    
-    assign buffer_index = counter[COUNTER_WIDTH-1:0];
-    assign phase = counter[COUNTER_WIDTH]; 
+    logic signed [WIDTH-1:0] tw_re, tw_im;
     
     //Butterfly Unit inputs/outputs
     logic signed [WIDTH-1:0] bu_in_a_re, bu_in_a_im; 
@@ -48,6 +44,10 @@ module stage
     logic signed [WIDTH-1:0] cu_out_re, cu_out_im;
     
     
+    
+    assign buffer_index = (DELAY > 1) ? counter[COUNTER_WIDTH-1:0] : '0;
+    assign phase = counter[COUNTER_WIDTH]; 
+    
     always_comb begin
         bu_in_a_re = fifo_buffer_re [buffer_index]; 
         bu_in_a_im = fifo_buffer_im [buffer_index];
@@ -58,8 +58,8 @@ module stage
         cu_in_a_re = bu_out_diff_re; 
         cu_in_a_im = bu_out_diff_im; 
         
-        cu_in_b_re = twiddle_factors_re[buffer_index]; 
-        cu_in_b_im = twiddle_factors_im[buffer_index]; 
+        cu_in_b_re = tw_re; 
+        cu_in_b_im = tw_im; 
         
     end
     
@@ -121,6 +121,17 @@ module stage
         
         .out_re(cu_out_re), 
         .out_im(cu_out_im)
+    ); 
+    
+    twiddle_rom #(
+        .WIDTH(WIDTH), 
+        .DELAY(DELAY), 
+        .COUNTER_WIDTH(COUNTER_WIDTH),
+        .MEMFILE(MEMFILE)
+    ) tw_rom (
+        .addr(buffer_index), 
+        .tw_re(tw_re), 
+        .tw_im(tw_im)
     ); 
     
 endmodule
