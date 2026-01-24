@@ -126,7 +126,7 @@ module stage
     twiddle_rom #(
         .WIDTH(WIDTH), 
         .DELAY(DELAY), 
-        .COUNTER_WIDTH(COUNTER_WIDTH),
+        .ADDR_BITS(COUNTER_WIDTH),
         .MEMFILE(MEMFILE)
     ) tw_rom (
         .addr(buffer_index), 
