@@ -1,63 +1,89 @@
 #!/usr/bin/env python3
 import math
+import argparse
 from pathlib import Path
+import shutil
 
-def to_twos_complement(x: int, width: int) -> int:
-    """Return x as unsigned two's complement with given width."""
-    mask = (1 << width) - 1
-    return x & mask
+def empty_outdir(outdir: Path) -> None:
+    """Delete outdir and recreate it empty."""
+    if outdir.exists():
+        shutil.rmtree(outdir)
+    outdir.mkdir(parents=True, exist_ok=True)
 
 def quantize_q1(x: float, width: int) -> int:
     """
-    Quantize x in [-1, 1] to signed WIDTH-bit two's complement.
-    Uses scale = 2^(W-1)-1 to avoid +1 overflow.
+    Quantize x into signed Q1.(width-1).
+    Returns signed int in [-2^(width-1), 2^(width-1)-1] with saturation.
     """
-    scale = (1 << (width - 1)) - 1
-    v = int(round(x * scale))
-    v = max(-scale, min(scale, v))  # clamp
-    return v
+    frac_bits = width - 1
+    scale = 1 << frac_bits
 
-def write_stage_mem(N: int, WIDTH: int, stage: int, out_dir: Path):
-    delay = N >> (stage + 1)
-    if delay < 1:
-        return
+    q = int(round(x * scale))
 
-    out_path = out_dir / f"stage{stage}.mem"
-    hex_digits = (2 * WIDTH + 3) // 4  # bits->hex chars (ceil)
+    qmax = (1 << (width - 1)) - 1   # e.g. +32767 for 16-bit
+    qmin = -(1 << (width - 1))      # e.g. -32768 for 16-bit
+    if q > qmax: q = qmax
+    if q < qmin: q = qmin
+    return q
 
-    lines = []
-    for m in range(delay):
-        k = m * (1 << stage)  # exponent
-        angle = -2.0 * math.pi * k / N
+def to_twos_bin(q: int, width: int) -> str:
+    """WIDTH-bit two's-complement binary string (no 0b, no minus)."""
+    mask = (1 << width) - 1
+    return format(q & mask, f"0{width}b")
+
+def write_stage_full(outdir: Path, stage: int, M: int, width: int) -> None:
+    """
+    Write full twiddle table for W_M^k = exp(-j*2*pi*k/M), k=0..M-1.
+    File format: first M lines = Re, next M lines = Im
+    """
+    path = outdir / f"stage{stage}.mem"
+
+    re_lines = []
+    im_lines = []
+
+    for k in range(M):
+        angle = 2.0 * math.pi * k / M
         re = math.cos(angle)
-        im = math.sin(angle)
+        im = -math.sin(angle)  # e^{-j...}
 
-        qre = quantize_q1(re, WIDTH)
-        qim = quantize_q1(im, WIDTH)
+        qre = quantize_q1(re, width)
+        qim = quantize_q1(im, width)
 
-        word = (to_twos_complement(qre, WIDTH) << WIDTH) | to_twos_complement(qim, WIDTH)
-        lines.append(f"{word:0{hex_digits}X}")
+        re_lines.append(to_twos_bin(qre, width))
+        im_lines.append(to_twos_bin(qim, width))
 
-    out_path.write_text("\n".join(lines) + "\n")
-    print(f"Wrote {out_path} ({delay} entries)")
+    with path.open("w") as f:
+        for line in re_lines:
+            f.write(line + "\n")
+        for line in im_lines:
+            f.write(line + "\n")
+
+    print(f"stage{stage}: W_{M} -> wrote {2*M} lines to {path}")
 
 def main():
-    N = 1024
-    WIDTH = 16
-    max_stages = 15  # stage0..stage14
-    out_dir = Path("twiddles")
-    out_dir.mkdir(parents=True, exist_ok=True)
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--N", type=int, default=1024, help="FFT size (power of 2)")
+    ap.add_argument("--width", type=int, default=16, help="Bit-width (16 => Q1.15)")
+    ap.add_argument("--out", type=str, default="twiddles", help="Output directory")
+    ap.add_argument("--num-stages", type=int, default=None,
+                    help="Stages to generate. Default = log2(N).")
+    args = ap.parse_args()
 
-    # sanity
-    if N & (N - 1):
-        raise ValueError("N must be a power of 2")
+    N = args.N
+    if N <= 0 or (N & (N - 1)) != 0:
+        raise ValueError("N must be a positive power of 2")
 
-    stages = int(math.log2(N))
-    if stages > max_stages:
-        raise ValueError(f"N={N} has {stages} stages > {max_stages}. Increase max_stages or limit N.")
+    outdir = Path(args.out)
+    empty_outdir(outdir)
 
-    for s in range(stages):
-        write_stage_mem(N, WIDTH, s, out_dir)
+    default_stages = int(math.log2(N))
+    num_stages = args.num_stages if args.num_stages is not None else default_stages
+
+    for s in range(num_stages):
+        M = N >> s  # stage s uses W_{N/2^s}
+        if M < 2:
+            break
+        write_stage_full(outdir, s, M, args.width)
 
 if __name__ == "__main__":
     main()
