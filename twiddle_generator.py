@@ -80,7 +80,7 @@ def main():
     num_stages = args.num_stages if args.num_stages is not None else default_stages
 
     for s in range(num_stages):
-        M = N >> s  # stage s uses W_{N/2^s}
+        M = N >> (s+1)  # stage s uses W_{N/2^s}
         if M < 2:
             break
         write_stage_full(outdir, s, M, args.width)

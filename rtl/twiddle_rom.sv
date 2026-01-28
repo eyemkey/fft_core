@@ -8,12 +8,12 @@ module twiddle_rom #(
     output logic signed [WIDTH-1:0] tw_re,
     output logic signed [WIDTH-1:0] tw_im
 );
-    logic [2*WIDTH-1:0] rom [0:DELAY-1];
+    logic [WIDTH-1:0] rom [0:2*DELAY-1];
 
-    initial $readmemh(MEMFILE, rom);
+    initial $readmemb(MEMFILE, rom);
 
     always_comb begin
-        tw_re = $signed(rom[addr][2*WIDTH-1:WIDTH]);
-        tw_im = $signed(rom[addr][WIDTH-1:0]);
+        tw_re = $signed(rom[addr]);
+        tw_im = $signed(rom[addr + DELAY]);
     end
 endmodule
