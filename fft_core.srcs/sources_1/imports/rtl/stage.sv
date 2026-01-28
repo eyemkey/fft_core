@@ -46,7 +46,7 @@ module stage
     
     
     assign buffer_index = (DELAY > 1) ? counter[COUNTER_WIDTH-1:0] : '0;
-    assign phase = counter[COUNTER_WIDTH]; 
+    assign phase        = (counter >= DELAY);   // FIX: works for DELAY=1
     
     always_comb begin
         bu_in_a_re = fifo_buffer_re [buffer_index]; 
