@@ -86,3 +86,16 @@
 **/__pycache__/
 **/*.pyc
 **/*.pyo
+
+
+# Vivado project-generated folders (projectname.*)
+**/*.ip_user_files/
+**/*.srcs/
+**/*.sim/
+**/*.runs/
+**/*.cache/
+**/*.hw/
+**/*.gen/
+**/*.xpr
+**/*.jou
+**/*.log
