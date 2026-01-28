@@ -46,7 +46,7 @@ module stage
     
     
     assign buffer_index = (DELAY > 1) ? counter[COUNTER_WIDTH-1:0] : '0;
-    assign phase = counter[COUNTER_WIDTH]; 
+    assign phase        = (counter >= DELAY);   // FIX: works for DELAY=1
     
     always_comb begin
         bu_in_a_re = fifo_buffer_re [buffer_index]; 
@@ -64,6 +64,10 @@ module stage
     end
     
     always_ff @(posedge clk) begin
+        out_re <= 0; 
+        out_im <= 0; 
+        out_valid <= 1'b0; 
+        
         if(!rst_n) begin
             integer i; 
             for(i = 0; i < DELAY; i = i + 1) begin
@@ -76,9 +80,6 @@ module stage
             out_valid <= 1'b0;
         end
         else if (in_valid) begin
-            out_re <= in_re; 
-            out_im <= in_im; 
-            out_valid <= 1'b1; 
             
             if(!phase) begin //Input & no combination, store fifo
                 fifo_buffer_re [buffer_index] <= in_re; 
@@ -87,6 +88,7 @@ module stage
             else begin
                 out_re <= bu_out_sum_re; 
                 out_im <= bu_out_sum_im;
+                out_valid <= 1'b1; 
                 
                 fifo_buffer_re [buffer_index] <= cu_out_re; 
                 fifo_buffer_im [buffer_index] <= cu_out_im;
@@ -99,7 +101,8 @@ module stage
         else begin
             out_valid <= 1'b0;
         end
-    end    
+    end   
+    
     
     butterfly_unit #(.WIDTH(WIDTH)) bu (
         .in_a_re(bu_in_a_re), 

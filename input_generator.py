@@ -76,9 +76,9 @@ if __name__ == "__main__":
     out = "tb/input.mem"
 
     # Pick ONE:
-    re, im = zero(N)
-    # re, im = impulse(N, amp=0.5, idx=0)
-    # re, im = dc(N, amp=0.25)
+    # re, im = zero(N) #PASSED
+    # re, im = impulse(N, amp=0.5, idx=0) #PASSED
+    re, im = dc(N, amp=0.25)
     # re, im = tone_real(N, k0=3, amp=0.5)
     # re, im = tone_complex(N, k0=3, amp=0.5)
     # re, im = random_complex(N, amp=0.5, seed=123)

@@ -51,8 +51,6 @@ module fft_core
 endfunction
     
     
-
-    
     genvar s;
     generate
         for(s = 0; s < STAGES; s++) begin : GEN_STAGES

@@ -34,66 +34,94 @@ module fft_core_tb;
     initial clk = 1'b0;
     always #5 clk = ~clk;
 
-    // Read raw bits as unsigned, then cast to signed
-    logic [WIDTH-1:0] buff_input [0:2*N-1];
-    logic signed [WIDTH-1:0] buff_input_re [0:N-1];
-    logic signed [WIDTH-1:0] buff_input_im [0:N-1];
+    logic [WIDTH-1:0] mem_raw [0:2*N-1];
+    logic signed [WIDTH-1:0] x_re [0:N-1];
+    logic signed [WIDTH-1:0] x_im [0:N-1];
+    
+    logic signed [WIDTH-1:0] y_re [0:N-1];
+    logic signed [WIDTH-1:0] y_im [0:N-1];
+    
+    int cycle; 
 
-    logic signed [WIDTH-1:0] buff_out_re [0:N-1];
-    logic signed [WIDTH-1:0] buff_out_im [0:N-1];
-
+    always_ff @(posedge clk) begin
+        if(!rst_n) cycle <= 0; 
+        else cycle <= cycle + 1;
+    end
+    
     initial begin
-        rst_n    <= 1'b0;
-        in_re    <= '0;
-        in_im    <= '0;
-        in_valid <= 1'b0;
-
-        $readmemb("tb/input.mem", buff_input);
-
-        for (int i = 0; i < N; i++) begin
-            buff_input_re[i] = $signed(buff_input[i]);
-            buff_input_im[i] = $signed(buff_input[i+N]);
+        rst_n = 1'b0; 
+        in_re = 0; 
+        in_im = 0; 
+        in_valid = 1'b0; 
+        
+        $readmemb("input.mem", mem_raw); 
+        
+        for(int i = 0; i < N; i++) begin
+            x_re[i] = $signed(mem_raw[i]); 
+            x_im[i] = $signed(mem_raw[i+N]); 
+            $display("INPUT x[%0d] = %0d + j%0d", i, x_re[i], x_im[i]);        
         end
-
-        repeat (5) @(posedge clk);
-        rst_n <= 1'b1;
-        repeat (2) @(posedge clk);
-
-        for (int n = 0; n < N; n++) begin
-            @(posedge clk);
-            in_valid <= 1'b1;
-            in_re    <= buff_input_re[n];
-            in_im    <= buff_input_im[n];
+        
+        repeat(5) @(posedge clk); 
+        rst_n <= 1'b1; 
+        repeat(2) @(posedge clk); 
+        
+        for(int n = 0; n < N; n++) begin
+            @(posedge clk); 
+            in_valid <= 1'b1; 
+            in_re <= x_re[n]; 
+            in_im <= x_im[n];
+            $display("[cycle %0d] FEED n=%0d in=%0d + j%0d", cycle, n, x_re[n], x_im[n]);        
         end
-
-        @(posedge clk);
-        in_valid <= 1'b0;
-        in_re    <= '0;
-        in_im    <= '0;
+        
+        for(int f = 0; f < (N * N); f++) begin
+            @(posedge clk); 
+            in_valid <= 1'b1; 
+            in_re <= 0; 
+            in_im <= 0; 
+            $display("[cycle %0d] FLUSH f=%0d", cycle, f); 
+        end
+        
+        @(posedge clk); 
+        in_valid <= 1'b0; 
+        in_re <= 0; 
+        in_im <= 0; 
     end
 
-    initial begin
-        int out_count = 0;
+initial begin
+    int out_count = 0;
+    int timeout_cycles = 200;  // prevents sim hang
+    int waited = 0;
 
-        while (!rst_n) @(posedge clk);
+    // wait for reset deassert
+    while (!rst_n) @(posedge clk);
 
-        while (out_count < N) begin
-            @(posedge clk);
-            #1step; // sample after signals settle in this time step
-            if (out_valid) begin
-                $display(out_re);
-                buff_out_re[out_count] = out_re;
-                buff_out_im[out_count] = out_im;
-                out_count++;
-            end
-        end
+    // capture until N outputs
+    while (out_count < N && waited < timeout_cycles) begin
+      @(posedge clk);
+      waited++;
 
-        $display("\nCaptured FFT output (signed ints):");
-        for (int k = 0; k < N; k++) begin
-            $display("X[%0d] = %0d + j%0d", k,
-                     $signed(buff_out_re[k]), $signed(buff_out_im[k]));
-        end
-        $finish;
+      // sample after signal updates in this timestep
+      #1step;
+      if (out_valid) begin
+        y_re[out_count] = out_re;
+        y_im[out_count] = out_im;
+        $display("[cycle %0d] OUT k=%0d  %0d + j%0d", cycle, out_count, out_re, out_im);
+        out_count++;
+      end
     end
+
+    if (out_count < N) begin
+      $display("ERROR: timed out. only captured %0d outputs.", out_count);
+      $finish;
+    end
+
+    $display("\nCaptured FFT output (signed ints):");
+    for (int k = 0; k < N; k++) begin
+      $display("X[%0d] = %0d + j%0d", k, y_re[k], y_im[k]);
+    end
+
+    $finish;
+  end
 
 endmodule
