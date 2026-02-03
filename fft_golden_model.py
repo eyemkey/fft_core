@@ -2,43 +2,7 @@
 import argparse
 import numpy as np
 from pathlib import Path
-
-def read_input_mem_signed(path: str, N: int, WIDTH: int = 16): 
-    p = Path(path)
-    lines = []
-    for raw in p.read_text().splitlines(): 
-        s = raw.strip()
-        if not s: 
-            continue
-        if s.startswith("//"):
-            continue
-        if "//" in s: 
-            s = s.split("//", 1)[0].strip()
-
-        if s: 
-            lines.append(s)
-
-    if len(lines) < 2 * N: 
-        raise ValueError(f"{path}: expected >= {2*N} data lines, got {len(lines)}")
-
-    def bin_to_signed_int(b: str) -> int: 
-        if len(b) != WIDTH or any(c not in "01" for c in b): 
-            raise ValueError(f"Bad word '{b}': expected {WIDTH}-bit binary string")
-        
-        u = int(b, 2)
-
-        if u & (1 << (WIDTH-1)):
-            u -= 1 << WIDTH
-
-        return u
-
-    re = np.array([bin_to_signed_int(lines[i]) for i in range(N)], dtype = np.int64)
-    im = np.array([bin_to_signed_int(lines[N+i]) for i in range(N)], dtype = np.int64)
-
-    print(re)
-    print(im)
-
-    return re, im
+from py.memio import read_input_mem_signed
 
 
 def run_fft_and_print(re_q: np.ndarray, im_q: np.ndarray, frac_bits: int=15):
@@ -71,7 +35,7 @@ def fft_q15_golden(re_q, im_q, frac=15):
         print(f"X[{k}] = {Xre_q[k]} + j{Xim_q[k]}")
 
 def main(): 
-    re_q, im_q = read_input_mem_signed("tb/input.mem", N=16, WIDTH=16)
+    re_q, im_q = read_input_mem_signed("tb/input.mem", N=8, WIDTH=16)
     run_fft_and_print(re_q, im_q, frac_bits = 15)
 
     # fft_q15_golden(re_q, im_q, frac=15)
