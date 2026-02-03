@@ -4,6 +4,7 @@ import random
 from pathlib import Path
 from py.fixed_point import quantize_q1, to_twos_bin
 from py.memio import write_input_mem
+import argparse
 
 # ---- Stimulus generators ----
 
@@ -42,8 +43,15 @@ def random_complex(N: int, amp: float = 0.5, seed: int = 1):
     return re, im
 
 if __name__ == "__main__":
-    N = 8
-    WIDTH = 16
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--N", type=int, default=1024, help="FFT size (power of 2)")
+    ap.add_argument("--WIDTH", type=int, default=16, help="Bit-width (16 => Q1.15)")
+
+    args = ap.parse_args()
+
+    N = args.N
+    WIDTH = args.WIDTH
     out = "tb/input.mem"
 
     # Pick ONE:

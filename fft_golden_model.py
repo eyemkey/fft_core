@@ -3,6 +3,7 @@ import argparse
 import numpy as np
 from pathlib import Path
 from py.memio import read_input_mem_signed
+import argparse
 
 
 def run_fft_and_print(re_q: np.ndarray, im_q: np.ndarray, frac_bits: int=15):
@@ -35,7 +36,13 @@ def fft_q15_golden(re_q, im_q, frac=15):
         print(f"X[{k}] = {Xre_q[k]} + j{Xim_q[k]}")
 
 def main(): 
-    re_q, im_q = read_input_mem_signed("tb/input.mem", N=8, WIDTH=16)
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--N", type=int, default=1024, help="FFT size (power of 2)")
+    ap.add_argument("--WIDTH", type=int, default=16, help="Bit-width (16 => Q1.15)")
+
+    args = ap.parse_args()
+
+    re_q, im_q = read_input_mem_signed("tb/input.mem", N=args.N, WIDTH=args.WIDTH)
     run_fft_and_print(re_q, im_q, frac_bits = 15)
 
     # fft_q15_golden(re_q, im_q, frac=15)
