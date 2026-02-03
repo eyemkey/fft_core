@@ -31,22 +31,22 @@ module fft_core
     
     function automatic string stage_memfile (int idx);
     case (idx)
-        0:  stage_memfile = "twiddles/stage0.mem";
-        1:  stage_memfile = "twiddles/stage1.mem";
-        2:  stage_memfile = "twiddles/stage2.mem";
-        3:  stage_memfile = "twiddles/stage3.mem";
-        4:  stage_memfile = "twiddles/stage4.mem";
-        5:  stage_memfile = "twiddles/stage5.mem";
-        6:  stage_memfile = "twiddles/stage6.mem";
-        7:  stage_memfile = "twiddles/stage7.mem";
-        8:  stage_memfile = "twiddles/stage8.mem";
-        9:  stage_memfile = "twiddles/stage9.mem";
-        10: stage_memfile = "twiddles/stage10.mem";
-        11: stage_memfile = "twiddles/stage11.mem";
-        12: stage_memfile = "twiddles/stage12.mem";
-        13: stage_memfile = "twiddles/stage13.mem";
-        14: stage_memfile = "twiddles/stage14.mem";
-        default: stage_memfile = "twiddles/stage0.mem";
+        0:  stage_memfile = "stage0.mem";
+        1:  stage_memfile = "stage1.mem";
+        2:  stage_memfile = "stage2.mem";
+        3:  stage_memfile = "stage3.mem";
+        4:  stage_memfile = "stage4.mem";
+        5:  stage_memfile = "stage5.mem";
+        6:  stage_memfile = "stage6.mem";
+        7:  stage_memfile = "stage7.mem";
+        8:  stage_memfile = "stage8.mem";
+        9:  stage_memfile = "stage9.mem";
+        10: stage_memfile = "stage10.mem";
+        11: stage_memfile = "stage11.mem";
+        12: stage_memfile = "stage12.mem";
+        13: stage_memfile = "stage13.mem";
+        14: stage_memfile = "stage14.mem";
+        default: stage_memfile = "stage0.mem";
     endcase
 endfunction
     

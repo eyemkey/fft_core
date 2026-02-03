@@ -23,6 +23,7 @@ module stage
     localparam int LOG2DELAY= $clog2(DELAY);
     localparam int COUNTER_WIDTH  = (LOG2DELAY > 0) ? LOG2DELAY : 1;
     localparam logic [COUNTER_WIDTH:0] COUNTER_MAX = 2*DELAY-1;
+    localparam logic [COUNTER_WIDTH-1:0] BUFFER_MAX = COUNTER_MAX [COUNTER_WIDTH-1:0]; 
         
     logic [COUNTER_WIDTH:0] counter; //MSB for phase check, rest for indexing
     logic [COUNTER_WIDTH-1:0] buffer_index;
@@ -43,6 +44,10 @@ module stage
     logic signed [WIDTH-1:0] cu_in_b_re, cu_in_b_im; 
     logic signed [WIDTH-1:0] cu_out_re, cu_out_im;
     
+    
+    logic no_input; 
+    logic fifo_full_once; 
+    logic is_streaming_complete; 
     
     
     assign buffer_index = (DELAY > 1) ? counter[COUNTER_WIDTH-1:0] : '0;
@@ -66,7 +71,6 @@ module stage
     always_ff @(posedge clk) begin
         out_re <= 0; 
         out_im <= 0; 
-        out_valid <= 1'b0; 
         
         if(!rst_n) begin
             integer i; 
@@ -78,14 +82,25 @@ module stage
             out_re <= 0; 
             out_im <= 0; 
             out_valid <= 1'b0;
+            is_streaming_complete <= 1'b0;
+//            is_combine <= 0; 
         end
         else if (in_valid) begin
             
             if(!phase) begin //Input & no combination, store fifo
                 fifo_buffer_re [buffer_index] <= in_re; 
-                fifo_buffer_im [buffer_index] <= in_im;            
-            end 
-            else begin
+                fifo_buffer_im [buffer_index] <= in_im;   
+                
+                if(fifo_full_once) begin
+                    
+                    out_re <= fifo_buffer_re[buffer_index]; 
+                    out_im <= fifo_buffer_im[buffer_index];
+                    out_valid <= 1'b1;          
+                end
+             end 
+            else begin //butterfly unit, out <= sum, fifo <= diff
+//                is_combine <= 1'b1; 
+            
                 out_re <= bu_out_sum_re; 
                 out_im <= bu_out_sum_im;
                 out_valid <= 1'b1; 
@@ -97,12 +112,48 @@ module stage
             if(counter == COUNTER_MAX) begin
                 counter <= 0;             
             end else counter <= counter + 1; 
+        end
+      
+        else if(no_input && !is_streaming_complete && (buffer_index == BUFFER_MAX || DELAY == 1)) begin
+            out_re <= fifo_buffer_re[buffer_index]; 
+            out_im <= fifo_buffer_im[buffer_index];
+            out_valid <= 1'b1; 
+            
+            fifo_buffer_re[buffer_index] <= 0; 
+            fifo_buffer_im[buffer_index] <= 0;    
+            is_streaming_complete <= 1'b1;
+        end
+        
+        else if (no_input && !is_streaming_complete && buffer_index < BUFFER_MAX) begin 
+            is_streaming_complete <= 1'b0;
+            out_re <= fifo_buffer_re[buffer_index]; 
+            out_im <= fifo_buffer_im[buffer_index]; 
+            out_valid <= 1'b1;
+            
+            fifo_buffer_re[buffer_index] <= 0; 
+            fifo_buffer_im[buffer_index] <= 0;
+            
+            counter <= counter + 1; 
+            
+            if(DELAY == 1) is_streaming_complete <= 1'b1; 
         end 
+        
         else begin
             out_valid <= 1'b0;
         end
     end   
     
+    always_ff @(negedge in_valid) begin
+        if(!rst_n) no_input <= 0; 
+        
+        else no_input <= 1; 
+    end
+    
+    always_ff @(posedge phase) begin
+        if(!rst_n) fifo_full_once <= 1'b0;
+        else fifo_full_once <= 1'b1; 
+    
+    end
     
     butterfly_unit #(.WIDTH(WIDTH)) bu (
         .in_a_re(bu_in_a_re), 
