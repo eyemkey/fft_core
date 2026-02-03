@@ -37,12 +37,19 @@ module reorder_buffer
     
     always_ff @(posedge clk) begin
         if(!rst_n) begin
+            integer i; 
+            for(i = 0; i < N; i=i+1) begin
+                mem_re[i] <= 0; 
+                mem_im[i] <= 0; 
+            end
+                    
+                
             state <= FILL; 
             wr_cnt <= 0; 
             rd_cnt <= 0; 
             out_valid <= 1'b0; 
             out_re <= 0; 
-            out_im <= 0;        
+            out_im <= 0; 
         end
         else begin
             case(state)
