@@ -32,7 +32,7 @@ module fft_core_tb;
 
     // clock
     initial clk = 1'b0;
-    always #5 clk = ~clk;
+    always #10 clk = ~clk; //50MHz
 
     logic [WIDTH-1:0] mem_raw [0:2*N-1];
     logic signed [WIDTH-1:0] x_re [0:N-1];
@@ -72,14 +72,6 @@ module fft_core_tb;
             in_re <= x_re[n]; 
             in_im <= x_im[n];
             $display("[cycle %0d] FEED n=%0d in=%0d + j%0d", cycle, n, x_re[n], x_im[n]);        
-        end
-        
-        for(int f = 0; f < (N * N); f++) begin
-            @(posedge clk); 
-            in_valid <= 1'b1; 
-            in_re <= 0; 
-            in_im <= 0; 
-            $display("[cycle %0d] FLUSH f=%0d", cycle, f); 
         end
         
         @(posedge clk); 
