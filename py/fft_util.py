@@ -1,0 +1,30 @@
+import numpy as np
+
+def run_fft_and_print(re_q: np.ndarray, im_q: np.ndarray, frac_bits: int=15):
+    N = len(re_q)
+    if len(im_q) != N: 
+        raise ValueError("re_q and im_q must have same length")
+
+    scale = 1.0 / (1 << frac_bits)
+    x = (re_q.astype(np.float64) * scale) + 1j * (im_q.astype(np.float64) * scale)
+
+    X = np.fft.fft(x, n=N)
+
+    print("k\tRe\t\t\tIm\t\t\t|X|")
+    for k in range(N): 
+        print(f"{k}\t{X[k].real: .12e}\t{X[k].imag: .12e}\t{abs(X[k]): .12e}")
+
+    return X
+
+
+def fft_q15_golden(re_q, im_q, frac=15):
+    N = len(re_q)
+    x = (re_q / (1<<frac)) + 1j*(im_q / (1<<frac))
+    X = np.fft.fft(x)
+
+    # quantize back to q15
+    Xre_q = np.rint(np.real(X) * (1<<frac)).astype(int)
+    Xim_q = np.rint(np.imag(X) * (1<<frac)).astype(int)
+
+    for k in range(N):
+        print(f"X[{k}] = {Xre_q[k]} + j{Xim_q[k]}")
