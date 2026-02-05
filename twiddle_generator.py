@@ -26,8 +26,7 @@ def main():
     num_stages = args.num_stages if args.num_stages is not None else default_stages
 
     for s in range(num_stages):
-        M = N >> (s+1)  # stage s uses W_{N/2^s}
-        write_stage_full(outdir, s, M, args.width)
+        write_stage_full(outdir, s, N, args.width)
 
 if __name__ == "__main__":
     main()

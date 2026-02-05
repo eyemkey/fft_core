@@ -13,7 +13,7 @@ def empty_outdir(outdir: Path):
     outdir.mkdir(parents=True, exist_ok=True)
 
 
-def write_stage_full(outdir: Path, stage: int, M: int, width: int) -> None: 
+def write_stage_full(outdir: Path, stage: int, N: int, width: int) -> None: 
     """
     Write full twiddle table for W_M^k = exp(-j*2*pi*k/M), k=0...M-1
     File format: first M lines = Re, next M lines = Im
@@ -23,8 +23,10 @@ def write_stage_full(outdir: Path, stage: int, M: int, width: int) -> None:
     re_lines = []
     im_lines = []
 
+    M = N >> (stage + 1)
+
     for k in range(M): 
-        angle = 2.0 * math.pi * k / M
+        angle = 2.0 * math.pi * k / (2*M)
 
         re = math.cos(angle)
         im = -math.sin(angle)
