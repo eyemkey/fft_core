@@ -2,7 +2,7 @@
 
 module fft_core_tb;
 
-    localparam int N = 16;
+    localparam int N = 1024;
     localparam int WIDTH = 16;
 
     logic clk;
@@ -82,7 +82,7 @@ module fft_core_tb;
 
 initial begin
     int out_count = 0;
-    int timeout_cycles = 200;  // prevents sim hang
+    int timeout_cycles = 20000;  // prevents sim hang
     int waited = 0;
 
     // wait for reset deassert

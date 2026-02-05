@@ -2,7 +2,7 @@
 import math
 import random
 from pathlib import Path
-from py.fixed_point import quantize_q1, to_twos_bin
+from py.fixed_point import *
 from py.memio import write_input_mem
 import argparse
 
@@ -56,10 +56,17 @@ if __name__ == "__main__":
 
     # Pick ONE:
     # re, im = zero(N) #PASSED
-    re, im = impulse(N, amp=0.5, idx=0) #PASSED
-    # re, im = dc(N, amp=0.25)
-    # re, im = tone_real(N, k0=3, amp=0.5)
-    # re, im = tone_complex(N, k0=3, amp=0.5)
+    # re, im = impulse(N, amp=0.5, idx=0) #PASSED
+    # re, im = dc(N, amp=0.25) #PASSED
+    
+    # re, im = tone_real(N, k0=3, amp=0.25) #PASSED
+    re, im = tone_complex(N, k0=3, amp=0.5)
     # re, im = random_complex(N, amp=0.5, seed=123)
+
+    gain = 1.0
+    if all(v == 0 for v in im): 
+        re, gain = scale_frame_l1_real(re, headroom=0.95)
+    else: 
+        re, im, gain = scale_frame_l1_complex(re, im, headroom=0.95)
 
     write_input_mem(out, re, im, WIDTH)
